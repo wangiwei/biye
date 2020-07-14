@@ -2144,8 +2144,9 @@ while loop < 50:
 	print("修复后的目标函数值为：", ubound)
 	ubound_log.append(best_value_ubound)
 
-	lambda_, mju, pre_slack_h1, pre_slack_h2 = update_lam_mju(lambda_, mju, best_value_ubound, best_value, facility, scale,
-													  primary_z, primary_x, I, J, K, h1, h2, c, pre_slack_h1, pre_slack_h2)
+	lambda_, mju, pre_slack_h1, pre_slack_h2 = update_lam_mju(lambda_, mju, best_value_ubound, best_value, facility,
+															  scale, primary_z, primary_x, I, J, K, h1, h2, c,
+															  pre_slack_h1, pre_slack_h2)
 	print("lambda的值为", lambda_)
 	print("mju的值为", mju)
 
