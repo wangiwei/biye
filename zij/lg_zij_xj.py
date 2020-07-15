@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import copy
-from zij.m_z import modify_z
-from zij.relax_model import Lagrange_relaxation_model
-from zij.up_cz import update_lam_mju
+from m_z import modify_z
+from relax_model import Lagrange_relaxation_model
+from up_cz import update_lam_mju
 
 
 # --------------- 模型参数 -----------
@@ -2082,19 +2082,19 @@ for i in range(demand):
 	for j in range(facility):
 		for k in range(level):
 			if q_for_chengzi[i, j, k] == 100:
-				q_for_chengzi[i, j, k] == 0
+				q_for_chengzi[i, j, k] = 0
 
-# for fac in range(facility):
-# 	lambda_[fac] = max(q_for_chengzi[:, fac, 0]) / 10
-# 	mju[fac] = max(q_for_chengzi[:, fac, 1])
+for fac in range(facility):
+	lambda_[fac] = max(q_for_chengzi[:, fac, 0]) / 10
+	mju[fac] = max(q_for_chengzi[:, fac, 1])
 
 lbound = 0
-ubound = 500
+ubound = 50000
 same = 0
 same_limit = 5
 scale = 5
 best_value = 0
-best_value_ubound = 1000
+best_value_ubound = 100000
 lbound_log = list()
 ubound_log = list()
 loop = 0  # 循环计数
@@ -2104,7 +2104,7 @@ pre_slack_h1 = np.zeros(facility)
 pre_slack_h2 = np.zeros(facility)
 # print("--------------", len(h1), len(h2))
 start = time.time()
-while loop < 50:
+while loop < 200:
 	print("第{}次循环，GAP值为{}.".format(loop + 1, (best_value_ubound - best_value) / best_value_ubound))
 
 	model = Lagrange_relaxation_model(q, h1, h2, c, f, level, facility, demand, lambda_, mju)
@@ -2122,6 +2122,21 @@ while loop < 50:
 			for k in range(level):
 				primary_z[i, j, k] = model.z[i, j, k]
 	print(">>>>>>>>>>松弛问题建立的设施", primary_x)
+
+
+
+	slack_h1 = np.zeros(facility)
+	slack_h2 = np.zeros(facility)
+	for j in J:
+		slack_h1[j] = sum(primary_z[i, j, k] * h1[i] for i in I for k in K) - c[j] * primary_x[j]
+		slack_h2[j] = sum(primary_z[i, j, k] * h2[i] for i in I for k in K) - c[j] * primary_x[j]
+
+	print("-----------------------------------")
+	print("slack_h1", slack_h1)
+	print("slack_h2", slack_h2)
+	print("-----------------------------------")
+
+
 
 	# 生成拉格朗日乘子粘连参数
 	if lbound > best_value:

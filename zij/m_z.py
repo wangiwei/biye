@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 
-from zij.enhance_ubound import enhance_ubound
+from enhance_ubound import enhance_ubound
 
 
 def modify_z(primary_z, primary_x, facility, demand, level, q, f, c, h1, h2, I, J, K, best_value_ubound):
@@ -45,17 +45,15 @@ def modify_z(primary_z, primary_x, facility, demand, level, q, f, c, h1, h2, I, 
 
 				# 第一层供应
 				mody_q1 = copy.deepcopy(q[max_demand_point, :, 0])
-				for each_q1 in range(facility):
-					if mody_q1[each_q1] == 100:
-						mody_q1[each_q1] = 0
-				# shortest_dist1 = sorted(mody_q1, reverse=True)
+				# for each_q1 in range(facility):
+				# 	if mody_q1[each_q1] == 100:
+				# 		mody_q1[each_q1] = 0
 				shortest_dist1 = sorted(mody_q1)
 
 				dem_be_meet = False
-
 				# 依次取出能够 有效 供应最大需求点最近的设施距离和该设施点编号
 				for fac_to_demand_dist in shortest_dist1:
-					if fac_to_demand_dist > 0:  # 确保该设施能够覆盖能够供应
+					if fac_to_demand_dist < 100:  # 确保该设施能够覆盖能够供应
 						fac_reliable = mody_q1.tolist().index(fac_to_demand_dist)
 
 						# 判断路径最短的设施点是否已经被选中，且保证该有效供应设施点不是原设施点，也不是未建设施点
@@ -73,9 +71,9 @@ def modify_z(primary_z, primary_x, facility, demand, level, q, f, c, h1, h2, I, 
 								dem_be_meet = True
 								break
 
-				# 若第一层满足需求，直接结束整个循环
-				if dem_be_meet:
-					break
+				# # 若第一层满足需求，直接结束整个循环
+				# if dem_be_meet:
+				# 	break
 
 				# 第二层供应
 				mody_q2 = copy.deepcopy(q[max_demand_point, :, 1])
@@ -105,19 +103,18 @@ def modify_z(primary_z, primary_x, facility, demand, level, q, f, c, h1, h2, I, 
 									dem_be_meet = True
 									break
 
-				# 若第二层满足需求，直接结束整个循环
-				if dem_be_meet:
-					break
+				# # 若第二层满足需求，直接结束整个循环
+				# if dem_be_meet:
+				# 	break
 
 				if not dem_be_meet:
 					for new_fac_to_demand_dist in shortest_dist1:
-						new_fac = shortest_dist1.tolist().index(new_fac_to_demand_dist)
+						new_fac = shortest_dist1.index(new_fac_to_demand_dist)
 						if primary_x[new_fac] == 0:
 							print("新建了编号为{}的设施点".format(new_fac))
 							primary_x[new_fac] = 1
 							primary_z[max_demand_point, new_fac, 0] = 1
 							primary_z[max_demand_point, new_fac, 1] = 0
-							dem_be_meet = True
 							break
 
 			# 如若没用到，直接拆除
@@ -130,7 +127,18 @@ def modify_z(primary_z, primary_x, facility, demand, level, q, f, c, h1, h2, I, 
 	ubound = sum(f[j] * primary_x[j] for j in J) + sum(1 - sum(primary_z[i, j, 0] for j in J) for i in I) + \
 			 sum(primary_z[i, j, k] * q[i][j][k] for i in I for j in J for k in K)
 
-	if ubound < best_value_ubound:
+	# slack_h1 = np.zeros(facility)
+	# slack_h2 = np.zeros(facility)
+	# for j in J:
+	# 	slack_h1[j] = sum(primary_z[i, j, k] * h1[i] for i in I for k in K) - c[j] * primary_x[j]
+	# 	slack_h2[j] = sum(primary_z[i, j, k] * h2[i] for i in I for k in K) - c[j] * primary_x[j]
+	#
+	# print("-----------------------------------")
+	# print("slack_h1", slack_h1)
+	# print("slack_h2", slack_h2)
+	# print("-----------------------------------")
+
+	if ubound < best_value_ubound * 2:
 		up_mdl = enhance_ubound(q, h1, h2, c, f, level, facility, demand, primary_x)
 		if up_mdl.solve():
 			ubound = up_mdl.objective_value

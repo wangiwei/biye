@@ -1,11 +1,11 @@
 import numpy as np
 
 
-def update_lam_mjuupdate_lam_mjuupdate_lam_mju(lambda_, mju, best_value_ubound, best_value, facility, scale,
-													  primary_z, primary_x, I, J, K, h1, h2, c, pre_slack_h1, pre_slack_h2):
+def update_lam_mju(lambda_, mju, best_value_ubound, best_value, facility, scale, primary_z, primary_x, I, J, K, h1, h2,
+				   c, pre_slack_h1, pre_slack_h2):
 	"""
 	更新拉格朗日乘子 lambda_, mju
-	:param lambda_: J (facility)
+	:param lambda_: J (faciluty)
 	:param mju: J (facility)
 	:param facility: 设施数量
 	:return: lambda_， mju
@@ -23,14 +23,16 @@ def update_lam_mjuupdate_lam_mjuupdate_lam_mju(lambda_, mju, best_value_ubound, 
 		slack_h1[j] = sum(primary_z[i, j, k] * h1[i] for i in I for k in K) - c[j] * primary_x[j]
 		slack_h2[j] = sum(primary_z[i, j, k] * h2[i] for i in I for k in K) - c[j] * primary_x[j]
 
-	for j in J:
-		total_slack_h1[j] = slack_h1[j] + 0.3 * pre_slack_h1[j]
-		total_slack_h2[j] = slack_h2[j] + 0.3 * pre_slack_h2[j]
+	# 一种尝试
+	# for j in J:
+	# 	total_slack_h1[j] = slack_h1[j] + 0.3 * pre_slack_h1[j]
+	# 	total_slack_h2[j] = slack_h2[j] + 0.3 * pre_slack_h2[j]
 
 	# 记录分母
 	norm = 0
 	for j in J:
-		norm += np.power(total_slack_h1[j], 2) + np.power(total_slack_h2[j], 2)
+		# norm += np.power(total_slack_h1[j], 2) + np.power(total_slack_h2[j], 2)
+		norm += np.power(slack_h1[j], 2) + np.power(slack_h2[j], 2)
 
 	step = scale * (best_value_ubound - best_value) / norm
 
@@ -39,13 +41,23 @@ def update_lam_mjuupdate_lam_mjuupdate_lam_mju(lambda_, mju, best_value_ubound, 
 		# lambda_[j] = max(lambda_[j] + step * slack_h1[j], 0)
 		# mju[j] = max(mju[j] + step * slack_h2[j], 0)
 
-		if lambda_[j] + step * total_slack_h1[j] > 0.001:
-			lambda_[j] += step * total_slack_h1[j]
+		# if lambda_[j] + step * total_slack_h1[j] > 0.001:
+		# 	lambda_[j] += step * total_slack_h1[j]
+		# else:
+		# 	lambda_[j] = 0
+		#
+		# if mju[j] + step * total_slack_h2[j] > 0.001:
+		# 	mju[j] += step * total_slack_h2[j]
+		# else:
+		# 	mju[j] = 0
+
+		if lambda_[j] + step * slack_h1[j] > 0.001:
+			lambda_[j] += step * slack_h1[j]
 		else:
 			lambda_[j] = 0
 
-		if mju[j] + step * total_slack_h2[j] > 0.001:
-			mju[j] += step * total_slack_h2[j]
+		if mju[j] + step * slack_h2[j] > 0.001:
+			mju[j] += step * slack_h2[j]
 		else:
 			mju[j] = 0
 
